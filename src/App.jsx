@@ -7,6 +7,7 @@ import Books from './routes/Books';
 import Book from './routes/Book';
 import AddBook from './routes/AddBook';
 
+
 //theme for the app
 const theme = createTheme({
   palette: {
@@ -27,7 +28,7 @@ function App() {
       element: <Root />,
       children: [
         { path: '/', element: <Books /> },
-        { path: '/book', element: <Book /> },
+        { path: '/book/:id', element: <Book /> },
         { path: '/addnew', element: <AddBook /> },
       ],
     },

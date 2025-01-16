@@ -7,16 +7,18 @@ import Button from '@mui/material/Button';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import Alert from '@mui/material/Alert';
+import bookImg from '../assets/book.svg';
 import { DateField } from '@mui/x-date-pickers/DateField';
 import useAxios from '../services/useAxios';
 import { bookGenres } from '../genres';
-import { Stack, Typography } from '@mui/material';
+import { Alert, Stack, Typography } from '@mui/material';
+
 
 //function to add new book to the current books available already
 function AddBook() {
-  const { alert, post } = useAxios('http://localhost:3001'); // get and retrieve data from localhost using axios
-  const [rateValue, setRateValue] = useState(3); // if the rating is already known, give its value eg: rating of 3 
+  const { alert, post, showAlert } = useAxios('http://localhost:3000'); // get and retrieve data from localhost using axios
+  const [rateValue, setRateValue] = useState(0); // if the rating is already known, give its value eg: rating of 3 
+  const [hover, setHover] = useState (0);
   const [book, setBook] = useState({  //getting values of new book and when to capture new values of new book from these inputs:
     author: '',
     name: '',
@@ -24,8 +26,11 @@ function AddBook() {
     completed: false,
     start: null,
     end: null,
-    stars: null,
+    stars: 0,
+    img: ''
   });
+
+    
 
   // choosing the genre of book. add a new book with genre(s). if book falls under more than one genre, split the types with ','.
   const genreChangeHandler = (event) => {
@@ -36,18 +41,18 @@ function AddBook() {
     });
   };
 
-  // rating of the book with the rating( number of stars) of choice.
-  const rateChangeHandler = (event) => {
-    const { value } = event.target;
-    setBook({
+  // function to handle the rating of the book
+  const rateChangeHandler = (event, newValue) => {
+    setBook((book)=> ({
       ...book,
-      stars: value,
-    });
+      stars: newValue,
+    }));
   };
+ 
 
-  // a function to handle when form is submitted
-  const addBookHandler = (e) => {
-    const { name, value, checked, type } = e.target;
+  // function to handle when form is submitted/updated or changed
+  const addBookHandler = (event) => {
+    const { name, value, checked, type } = event.target;
     if (type === 'checkbox' && name === 'completed') {
       setBook({ ...book, [name]: checked });
     } else {
@@ -56,9 +61,38 @@ function AddBook() {
   };
 
   // function to post to books data
-  function postHandler() {
-    post('books', book);
-  }
+  const postHandler = async (event) => {
+    event.preventDefault();
+  
+  // Ensure the book object has default img if missing
+  const bookSubmission = { ...book, img: book.img || bookImg };
+  
+  // Check if required fields are filled
+    if (bookSubmission.name && bookSubmission.author) {
+      try {
+        await post('/books', bookSubmission); // Async post using your custom method or axios
+        showAlert({ show: true, message: 'Book added successfully!', type: 'success' });
+  
+        // Reset the form after successful post
+        setBook({
+          author: '',
+          name: '',
+          genres: [],
+          completed: false,
+          start: null,
+          end: null,
+          stars: 0,
+          img: '',
+        });
+
+      } catch (error) {
+        showAlert({ show: true, message: 'Failed to add the book.', type: 'error' });
+      }
+    } else {
+      showAlert({ show: true, message: 'Please fill out all required fields.', type: 'error' });
+    }
+  };
+  
 
   // the function handles the inputs and event that takes place within the form. 
   return (
@@ -68,7 +102,9 @@ function AddBook() {
         alignItems="stretch"
         sx={{ my: 2, mx: 'auto', width: '25%' }}
       >
-        {alert.show && <Alert severity={alert.type}>{alert.message}</Alert>}
+        {alert.show && <Alert severity={alert.type} autoHideDuration={5000}>{alert.message}</Alert>}
+       
+
         <Typography variant="h4" component="h2" sx={{ my: 10 }}>
           Add a book
         </Typography>
@@ -118,19 +154,46 @@ function AddBook() {
           <Rating
             name="stars"
             value={rateValue}
-            onClick={rateChangeHandler}
             size="large"
             onChange={(event, newValue) => {
               setRateValue(newValue);
+              rateChangeHandler(event, newValue);
             }}
+            onChangeActive={(event, hover)=> {setHover (hover)}}
           />
         </Stack>
+
         <Button variant="contained" type="submit">
           Add new
         </Button>
+
       </Stack>
     </form>
   );
 }
 
 export default AddBook;
+
+
+
+
+/* const postHandler = (event) =>  {
+  event.preventDefault ();
+
+  if (book.name && book.author){
+    post('books', book);
+    setBook()
+  } else { error ('Please fill the form')}
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickway'){
+      return;
+    }
+    setOpen(false);
+
+
+
+   <Snackbar open={open} autoHideDuration={5000} onClose={handleClose}>
+          <Alert onClose={handleClose} severity='Added Successfully'></Alert>
+        </Snackbar>
+  } */
